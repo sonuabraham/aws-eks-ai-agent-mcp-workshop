@@ -1176,7 +1176,7 @@
     "Handle": {
      "Ref": "IDEIdeBootstrapWaitConditionHandleEEDFD1E0"
     },
-    "Timeout": "900"
+    "Timeout": "3600"
    },
    "DependsOn": [
     "IDEInstanceProfile629499A0",
