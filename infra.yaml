@@ -1,0 +1,1579 @@
+{
+ "Description": "Creates the lab environment for the workshop",
+ "Resources": {
+  "SharedRoleD1D02F7E": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": [
+         "codebuild.amazonaws.com",
+         "ec2.amazonaws.com"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AdministratorAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSSMManagedInstanceCore"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/SharedRole/Resource"
+   }
+  },
+  "SharedRoleDefaultPolicyA7803C87": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":logs:",
+           {
+            "Ref": "AWS::Region"
+           },
+           ":",
+           {
+            "Ref": "AWS::AccountId"
+           },
+           ":log-group:/aws/codebuild/",
+           {
+            "Ref": "TerraformRunnerStackDeployProject98D6FDAC"
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":logs:",
+           {
+            "Ref": "AWS::Region"
+           },
+           ":",
+           {
+            "Ref": "AWS::AccountId"
+           },
+           ":log-group:/aws/codebuild/",
+           {
+            "Ref": "TerraformRunnerStackDeployProject98D6FDAC"
+           }
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "codebuild:BatchPutCodeCoverages",
+        "codebuild:BatchPutTestCases",
+        "codebuild:CreateReport",
+        "codebuild:CreateReportGroup",
+        "codebuild:UpdateReport"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:",
+          {
+           "Ref": "AWS::Partition"
+          },
+          ":codebuild:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":report-group/",
+          {
+           "Ref": "TerraformRunnerStackDeployProject98D6FDAC"
+          },
+          "-*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "IDEIdeLogGroup2C309711",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "IDEIdePasswordSecret13714D56"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "SharedRoleDefaultPolicyA7803C87",
+    "Roles": [
+     {
+      "Ref": "SharedRoleD1D02F7E"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/SharedRole/DefaultPolicy/Resource"
+   }
+  },
+  "TerraformRunnerTerraformStateBucket72F4F64A": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "OwnershipControls": {
+     "Rules": [
+      {
+       "ObjectOwnership": "BucketOwnerEnforced"
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformStateBucket/Resource"
+   }
+  },
+  "TerraformRunnerTerraformStateBucketPolicyFA23C741": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "TerraformRunnerTerraformStateBucket72F4F64A"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TerraformRunnerTerraformStateBucket72F4F64A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TerraformRunnerTerraformStateBucket72F4F64A",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformStateBucket/Policy/Resource"
+   }
+  },
+  "TerraformRunnerStackDeployProject98D6FDAC": {
+   "Type": "AWS::CodeBuild::Project",
+   "Properties": {
+    "Artifacts": {
+     "Type": "NO_ARTIFACTS"
+    },
+    "Cache": {
+     "Type": "NO_CACHE"
+    },
+    "EncryptionKey": "alias/aws/s3",
+    "Environment": {
+     "ComputeType": "BUILD_GENERAL1_SMALL",
+     "EnvironmentVariables": [
+      {
+       "Name": "TERRAFORM_STATE_S3_BUCKET",
+       "Type": "PLAINTEXT",
+       "Value": {
+        "Ref": "TerraformRunnerTerraformStateBucket72F4F64A"
+       }
+      },
+      {
+       "Name": "TERRAFORM_ZIP",
+       "Type": "PLAINTEXT",
+       "Value": "https://github.com/aws-samples/sample-agentic-frameworks-on-aws/archive/refs/heads/main.zip"
+      },
+      {
+       "Name": "TERRAFORM_DIRECTORY",
+       "Type": "PLAINTEXT",
+       "Value": "eks/infrastructure/terraform"
+      },
+      {
+       "Name": "TERRAFORM_VERSION",
+       "Type": "PLAINTEXT",
+       "Value": "1.12.2"
+      },
+      {
+       "Name": "TF_VAR_name",
+       "Type": "PLAINTEXT",
+       "Value": "agentic-ai-on-eks-workshop"
+      },
+      {
+       "Name": "TF_VAR_region",
+       "Type": "PLAINTEXT",
+       "Value": {
+        "Ref": "AWS::Region"
+       }
+      },
+      {
+       "Name": "TF_VAR_account_id",
+       "Type": "PLAINTEXT",
+       "Value": {
+        "Ref": "AWS::AccountId"
+       }
+      }
+     ],
+     "Image": "aws/codebuild/standard:7.0",
+     "ImagePullCredentialsType": "CODEBUILD",
+     "PrivilegedMode": false,
+     "Type": "LINUX_CONTAINER"
+    },
+    "ServiceRole": {
+     "Fn::GetAtt": [
+      "SharedRoleD1D02F7E",
+      "Arn"
+     ]
+    },
+    "Source": {
+     "BuildSpec": "version: 0.2\nenv:\n  shell: bash\n  variables:\n    TERRAFORM_VERSION: \"1.12.2\"\n    TERRAFORM_ZIP: \"\"\n    TERRAFORM_STATE_S3_BUCKET: \"\"\n    TERRAFORM_DIRECTORY: \"eks/infrastructure/terraform\"\n    REQUESTED_ACTION: \"Create\"\nphases:\n  install:\n    commands: |\n      set -e\n      echo \"=== Installing Terraform ${TERRAFORM_VERSION} ===\"\n      curl -Lqs -o /tmp/terraform_installer.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip\n      unzip /tmp/terraform_installer.zip -d /usr/local/bin/\n      chmod +x /usr/local/bin/terraform\n      terraform -version\n  pre_build:\n    commands: |\n      set -e\n      echo \"=== Downloading Terraform Source Zip ===\"\n      mkdir -p /tmp/terraform\n      cd /tmp/terraform\n\n      if [[ $TERRAFORM_ZIP == s3:* ]]; then\n        aws s3 cp $TERRAFORM_ZIP /tmp/terraform.zip\n      else\n        curl -Lqs -o /tmp/terraform.zip $TERRAFORM_ZIP\n      fi\n\n      unzip -q /tmp/terraform.zip -d /tmp/terraform\n      ROOT_DIR=$(find /tmp/terraform -maxdepth 1 -type d -name \"*agentic-frameworks-on-aws*\" | head -n 1)\n      TARGET_DIR=\"$ROOT_DIR/$TERRAFORM_DIRECTORY\"\n\n      echo \"Root directory: $ROOT_DIR\"\n      echo \"Target directory: $TARGET_DIR\"\n\n      if [ ! -d \"$TARGET_DIR\" ]; then\n        echo \"ERROR: Target Terraform directory does not exist: $TARGET_DIR\"\n        exit 1\n      fi\n\n      cat << EOF > \"$TARGET_DIR/backend_override.tf\"\n      terraform {\n        backend \"s3\" {}\n      }\n      EOF\n\n      terraform -chdir=\"$TARGET_DIR\" init \\\n        --backend-config=\"bucket=${TERRAFORM_STATE_S3_BUCKET}\" \\\n        --backend-config=\"key=terraform.tfstate\" \\\n        --backend-config=\"region=${AWS_REGION}\"\n  build:\n    commands: |\n      set -e\n      echo \"=== Running Terraform ===\"\n      cd \"$TARGET_DIR\"\n\n      echo \"Current directory: $(pwd)\"\n      echo \"Listing files:\"\n      ls -la\n\n      echo \"=== TERRAFORM VALIDATE ===\"\n      terraform validate || true\n\n      echo \"=== TERRAFORM PLAN ===\"\n      terraform plan || true\n\n      if [[ \"$REQUESTED_ACTION\" == \"Delete\" ]]; then\n        echo \"=== TERRAFORM DESTROY ===\"\n        terraform destroy --auto-approve\n      else\n        echo \"=== TERRAFORM APPLY ===\"\n        terraform apply --auto-approve\n      fi\n",
+     "Type": "NO_SOURCE"
+    },
+    "TimeoutInMinutes": 60
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/StackDeployProject/Resource"
+   }
+  },
+  "TerraformRunnerStartBuildFunctionServiceRole8C106ADF": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/StartBuildFunction/ServiceRole/Resource"
+   }
+  },
+  "TerraformRunnerStartBuildFunctionServiceRoleDefaultPolicy5B2919A8": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "codebuild:StartBuild",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TerraformRunnerStackDeployProject98D6FDAC",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TerraformRunnerStartBuildFunctionServiceRoleDefaultPolicy5B2919A8",
+    "Roles": [
+     {
+      "Ref": "TerraformRunnerStartBuildFunctionServiceRole8C106ADF"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/StartBuildFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TerraformRunnerStartBuildFunctionAD100DF4": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "// This function is based on the cfnresponse JS module that is published\n// by CloudFormation. It's an async function that makes coding much easier.\nconst respond = async function(event, context, responseStatus, responseData, physicalResourceId, noEcho) {\n  return new Promise((resolve, reject) => {\n    var responseBody = JSON.stringify({\n        Status: responseStatus,\n        Reason: \"See the details in CloudWatch Log Stream: \" + context.logGroupName + \" \" + context.logStreamName,\n        PhysicalResourceId: physicalResourceId || context.logStreamName,\n        StackId: event.StackId,\n        RequestId: event.RequestId,\n        LogicalResourceId: event.LogicalResourceId,\n        NoEcho: noEcho || false,\n        Data: responseData\n    });\n\n    console.log(\"Response body:\\\\n\", responseBody);\n\n    var https = require(\"https\");\n    var url = require(\"url\");\n\n    var parsedUrl = url.parse(event.ResponseURL);\n    var options = {\n        hostname: parsedUrl.hostname,\n        port: 443,\n        path: parsedUrl.path,\n        method: \"PUT\",\n        headers: {\n            \"content-type\": \"\",\n            \"content-length\": responseBody.length\n        }\n    };\n\n    var request = https.request(options, function(response) {\n        console.log(\"Status code: \" + response.statusCode);\n        console.log(\"Status message: \" + response.statusMessage);\n        resolve();\n    });\n\n    request.on(\"error\", function(error) {\n        console.log(\"respond(..) failed executing https.request(..): \" + error);\n        resolve();\n    });\n\n    request.write(responseBody);\n    request.end();\n  });\n};\nconst { CodeBuildClient, StartBuildCommand } = require('@aws-sdk/client-codebuild');\n\nexports.handler = async function (event, context) {\n  console.log(JSON.stringify(event, null, 4));\n  try {\n    const projectName = event.ResourceProperties.ProjectName;\n    const codeBuildIamRoleArn = event.ResourceProperties.CodeBuildIamRoleArn\n\n    const codebuild = new CodeBuildClient({});\n\n    console.log(`Starting new build of project ${projectName}`);\n\n    const command = new StartBuildCommand({\n      projectName,\n      // Pass CFN related parameters through the build for extraction by the\n      // completion handler.\n      environmentVariablesOverride: [\n        {\n          name: 'CFN_RESPONSE_URL',\n          value: event.ResponseURL\n        },\n        {\n          name: 'CFN_STACK_ID',\n          value: event.StackId\n        },\n        {\n          name: 'CFN_REQUEST_ID',\n          value: event.RequestId\n        },\n        {\n          name: 'CFN_LOGICAL_RESOURCE_ID',\n          value: event.LogicalResourceId\n        },\n        {\n          name: 'REQUESTED_ACTION',\n          value: event.RequestType\n        },\n        {\n          name: 'RESOURCE_CODEBUILD_ROLE_ARN',\n          value: codeBuildIamRoleArn\n        }\n      ]\n    });\n\n    const { build } = await codebuild.send(command);\n    console.log(`Build id ${build.id} started - resource completion handled by EventBridge`);\n  } catch(error) {\n    console.error(error);\n    await respond(event, context, 'FAILED', { Error: error });\n  }\n};\n"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "TerraformRunnerStartBuildFunctionServiceRole8C106ADF",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 60
+   },
+   "DependsOn": [
+    "TerraformRunnerStartBuildFunctionServiceRoleDefaultPolicy5B2919A8",
+    "TerraformRunnerStartBuildFunctionServiceRole8C106ADF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/StartBuildFunction/Resource"
+   }
+  },
+  "TerraformRunnerReportBuildFunctionServiceRole7F912F39": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/ReportBuildFunction/ServiceRole/Resource"
+   }
+  },
+  "TerraformRunnerReportBuildFunctionServiceRoleDefaultPolicyED9E498A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "codebuild:BatchGetBuilds",
+        "codebuild:ListBuildsForProject"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TerraformRunnerStackDeployProject98D6FDAC",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TerraformRunnerReportBuildFunctionServiceRoleDefaultPolicyED9E498A",
+    "Roles": [
+     {
+      "Ref": "TerraformRunnerReportBuildFunctionServiceRole7F912F39"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/ReportBuildFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TerraformRunnerReportBuildFunction930A0056": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "// This function is based on the cfnresponse JS module that is published\n// by CloudFormation. It's an async function that makes coding much easier.\nconst respond = async function(event, context, responseStatus, responseData, physicalResourceId, noEcho) {\n  return new Promise((resolve, reject) => {\n    var responseBody = JSON.stringify({\n        Status: responseStatus,\n        Reason: \"See the details in CloudWatch Log Stream: \" + context.logGroupName + \" \" + context.logStreamName,\n        PhysicalResourceId: physicalResourceId || context.logStreamName,\n        StackId: event.StackId,\n        RequestId: event.RequestId,\n        LogicalResourceId: event.LogicalResourceId,\n        NoEcho: noEcho || false,\n        Data: responseData\n    });\n\n    console.log(\"Response body:\\\\n\", responseBody);\n\n    var https = require(\"https\");\n    var url = require(\"url\");\n\n    var parsedUrl = url.parse(event.ResponseURL);\n    var options = {\n        hostname: parsedUrl.hostname,\n        port: 443,\n        path: parsedUrl.path,\n        method: \"PUT\",\n        headers: {\n            \"content-type\": \"\",\n            \"content-length\": responseBody.length\n        }\n    };\n\n    var request = https.request(options, function(response) {\n        console.log(\"Status code: \" + response.statusCode);\n        console.log(\"Status message: \" + response.statusMessage);\n        resolve();\n    });\n\n    request.on(\"error\", function(error) {\n        console.log(\"respond(..) failed executing https.request(..): \" + error);\n        resolve();\n    });\n\n    request.write(responseBody);\n    request.end();\n  });\n};\nconst { CodeBuildClient, BatchGetBuildsCommand } = require('@aws-sdk/client-codebuild');\n\nexports.handler = async function (event, context) {\n  console.log(JSON.stringify(event, null, 4));\n\n  const projectName = event['detail']['project-name'];\n\n  const codebuild = new CodeBuildClient({});\n\n  const buildId = event['detail']['build-id'];\n  const command = new BatchGetBuildsCommand({\n    ids: [ buildId ]\n  });\n\n  const { builds } = await codebuild.send(command);\n\n  console.log(JSON.stringify(builds, null, 4));\n\n  const build = builds[0];\n  // Fetch the CFN resource and response parameters from the build environment.\n  const environment = {};\n  build.environment.environmentVariables.forEach(e => environment[e.name] = e.value);\n\n  const response = {\n    ResponseURL: environment.CFN_RESPONSE_URL,\n    StackId: environment.CFN_STACK_ID,\n    LogicalResourceId: environment.CFN_LOGICAL_RESOURCE_ID,\n    RequestId: environment.CFN_REQUEST_ID\n  };\n\n  if (event['detail']['build-status'] === 'SUCCEEDED') {\n    await respond(response, context, 'SUCCESS', {}, 'build');\n  } else {\n    await respond(response, context, 'FAILED', { Error: 'Build failed' });\n  }\n};\n"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "TerraformRunnerReportBuildFunctionServiceRole7F912F39",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 60
+   },
+   "DependsOn": [
+    "TerraformRunnerReportBuildFunctionServiceRoleDefaultPolicyED9E498A",
+    "TerraformRunnerReportBuildFunctionServiceRole7F912F39"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/ReportBuildFunction/Resource"
+   }
+  },
+  "TerraformRunnerBuildCompleteRuleD8B3E8A0": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "Description": "Build complete",
+    "EventPattern": {
+     "source": [
+      "aws.codebuild"
+     ],
+     "detail-type": [
+      "CodeBuild Build State Change"
+     ],
+     "detail": {
+      "build-status": [
+       "SUCCEEDED",
+       "FAILED",
+       "STOPPED"
+      ],
+      "project-name": [
+       {
+        "Ref": "TerraformRunnerStackDeployProject98D6FDAC"
+       }
+      ]
+     }
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "TerraformRunnerReportBuildFunction930A0056",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/BuildCompleteRule/Resource"
+   }
+  },
+  "TerraformRunnerBuildCompleteRuleAllowEventRuleTeamStackAIAgentsTerraformRunnerReportBuildFunction4E4AFA6B3D993FAB": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "TerraformRunnerReportBuildFunction930A0056",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "TerraformRunnerBuildCompleteRuleD8B3E8A0",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/BuildCompleteRule/AllowEventRuleTeamStackAIAgentsTerraformRunnerReportBuildFunction4E4AFA6B"
+   }
+  },
+  "TerraformRunnerClusterStackF4381B35": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "TerraformRunnerStartBuildFunctionAD100DF4",
+      "Arn"
+     ]
+    },
+    "ProjectName": {
+     "Ref": "TerraformRunnerStackDeployProject98D6FDAC"
+    },
+    "CodeBuildIamRoleArn": {
+     "Fn::GetAtt": [
+      "SharedRoleD1D02F7E",
+      "Arn"
+     ]
+    },
+    "ContentHash": "2bec5db9042f861736fad3d8671118fe"
+   },
+   "DependsOn": [
+    "TerraformRunnerBuildCompleteRuleAllowEventRuleTeamStackAIAgentsTerraformRunnerReportBuildFunction4E4AFA6B3D993FAB",
+    "TerraformRunnerBuildCompleteRuleD8B3E8A0",
+    "TerraformRunnerReportBuildFunction930A0056",
+    "TerraformRunnerReportBuildFunctionServiceRoleDefaultPolicyED9E498A",
+    "TerraformRunnerReportBuildFunctionServiceRole7F912F39"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/TerraformRunner/TerraformRunner/ClusterStack/Default"
+   }
+  },
+  "IDEIdeVPC62913228": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "192.168.0.0/16",
+    "EnableDnsHostnames": true,
+    "EnableDnsSupport": true,
+    "InstanceTenancy": "default",
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "TeamStackAIAgents/IDE/IdeVPC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeVPC/Resource"
+   }
+  },
+  "IDEIdeVPCPublicSubnet1Subnet87DE07B9": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": {
+     "Fn::Select": [
+      0,
+      {
+       "Fn::GetAZs": ""
+      }
+     ]
+    },
+    "CidrBlock": "192.168.0.0/24",
+    "MapPublicIpOnLaunch": true,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Public"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Public"
+     },
+     {
+      "Key": "Name",
+      "Value": "TeamStackAIAgents/IDE/IdeVPC/PublicSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "IDEIdeVPC62913228"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeVPC/PublicSubnet1/Subnet"
+   }
+  },
+  "IDEIdeVPCPublicSubnet1RouteTable295EAED3": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "TeamStackAIAgents/IDE/IdeVPC/PublicSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "IDEIdeVPC62913228"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeVPC/PublicSubnet1/RouteTable"
+   }
+  },
+  "IDEIdeVPCPublicSubnet1RouteTableAssociationD92F1482": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "IDEIdeVPCPublicSubnet1RouteTable295EAED3"
+    },
+    "SubnetId": {
+     "Ref": "IDEIdeVPCPublicSubnet1Subnet87DE07B9"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeVPC/PublicSubnet1/RouteTableAssociation"
+   }
+  },
+  "IDEIdeVPCPublicSubnet1DefaultRouteF037C77C": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "GatewayId": {
+     "Ref": "IDEIdeVPCIGW9707448B"
+    },
+    "RouteTableId": {
+     "Ref": "IDEIdeVPCPublicSubnet1RouteTable295EAED3"
+    }
+   },
+   "DependsOn": [
+    "IDEIdeVPCVPCGW54E125D2"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeVPC/PublicSubnet1/DefaultRoute"
+   }
+  },
+  "IDEIdeVPCIGW9707448B": {
+   "Type": "AWS::EC2::InternetGateway",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "TeamStackAIAgents/IDE/IdeVPC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeVPC/IGW"
+   }
+  },
+  "IDEIdeVPCVPCGW54E125D2": {
+   "Type": "AWS::EC2::VPCGatewayAttachment",
+   "Properties": {
+    "InternetGatewayId": {
+     "Ref": "IDEIdeVPCIGW9707448B"
+    },
+    "VpcId": {
+     "Ref": "IDEIdeVPC62913228"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeVPC/VPCGW"
+   }
+  },
+  "IDEIdePrefixListFunctionServiceRole91222DAD": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePrefixListFunction/ServiceRole/Resource"
+   }
+  },
+  "IDEIdePrefixListFunctionServiceRoleDefaultPolicy1331864A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "ec2:DescribeManagedPrefixLists",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "IDEIdePrefixListFunctionServiceRoleDefaultPolicy1331864A",
+    "Roles": [
+     {
+      "Ref": "IDEIdePrefixListFunctionServiceRole91222DAD"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePrefixListFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "IDEIdePrefixListFunction1E541005": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "from __future__ import print_function\nimport boto3\nimport traceback\nimport cfnresponse\n\ndef lambda_handler(event, context):\n    print('Event: {}'.format(event))\n    print('context: {}'.format(context))\n    responseData = {}\n\n    status = cfnresponse.SUCCESS\n\n    if event['RequestType'] == 'Delete':\n        responseData = {'Success': 'Custom Resource removed'}\n        cfnresponse.send(event, context, status, responseData, 'CustomResourcePhysicalID')\n    else:\n        try:\n            # Open AWS clients\n            ec2 = boto3.client('ec2')\n\n            res = ec2.describe_managed_prefix_lists(\n               Filters=[{\n                  'Name': 'prefix-list-name',\n                  'Values': ['com.amazonaws.global.cloudfront.origin-facing']\n               }]\n            )\n\n            responseData = {'PrefixListId': str(res['PrefixLists'][0]['PrefixListId'])}\n        except Exception as e:\n            status = cfnresponse.FAILED\n            tb_err = traceback.format_exc()\n            print(tb_err)\n            responseData = {'Error': tb_err}\n        finally:\n            cfnresponse.send(event, context, status, responseData, 'CustomResourcePhysicalID')"
+    },
+    "Handler": "index.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "IDEIdePrefixListFunctionServiceRole91222DAD",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.12",
+    "Timeout": 180
+   },
+   "DependsOn": [
+    "IDEIdePrefixListFunctionServiceRoleDefaultPolicy1331864A",
+    "IDEIdePrefixListFunctionServiceRole91222DAD"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePrefixListFunction/Resource"
+   }
+  },
+  "IDEIdePrefixListResource5107C0EC": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "IDEIdePrefixListFunction1E541005",
+      "Arn"
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePrefixListResource/Default"
+   }
+  },
+  "IDEIdeSecurityGroup8A8A4754": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "IDE security group",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound traffic by default",
+      "IpProtocol": "-1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "IDEIdeVPC62913228"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeSecurityGroup/Resource"
+   }
+  },
+  "IDEIdeSecurityGroupfromIndirectPeer8064D68014": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "HTTP from CloudFront only",
+    "FromPort": 80,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "IDEIdeSecurityGroup8A8A4754",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourcePrefixListId": {
+     "Fn::GetAtt": [
+      "IDEIdePrefixListResource5107C0EC",
+      "PrefixListId"
+     ]
+    },
+    "ToPort": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeSecurityGroup/from {IndirectPeer}:80"
+   }
+  },
+  "IDEInstanceProfile629499A0": {
+   "Type": "AWS::IAM::InstanceProfile",
+   "Properties": {
+    "Roles": [
+     {
+      "Ref": "SharedRoleD1D02F7E"
+     }
+    ]
+   },
+   "DependsOn": [
+    "IDEIdeVPCIGW9707448B",
+    "IDEIdeVPCPublicSubnet1DefaultRouteF037C77C",
+    "IDEIdeVPCPublicSubnet1RouteTable295EAED3",
+    "IDEIdeVPCPublicSubnet1RouteTableAssociationD92F1482",
+    "IDEIdeVPCPublicSubnet1Subnet87DE07B9",
+    "IDEIdeVPC62913228",
+    "IDEIdeVPCVPCGW54E125D2",
+    "TerraformRunnerBuildCompleteRuleAllowEventRuleTeamStackAIAgentsTerraformRunnerReportBuildFunction4E4AFA6B3D993FAB",
+    "TerraformRunnerBuildCompleteRuleD8B3E8A0",
+    "TerraformRunnerClusterStackF4381B35",
+    "TerraformRunnerReportBuildFunction930A0056",
+    "TerraformRunnerReportBuildFunctionServiceRoleDefaultPolicyED9E498A",
+    "TerraformRunnerReportBuildFunctionServiceRole7F912F39",
+    "TerraformRunnerStackDeployProject98D6FDAC",
+    "TerraformRunnerStartBuildFunctionAD100DF4",
+    "TerraformRunnerStartBuildFunctionServiceRoleDefaultPolicy5B2919A8",
+    "TerraformRunnerStartBuildFunctionServiceRole8C106ADF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IDE/InstanceProfile"
+   }
+  },
+  "IDE40A28AC6641a0cee2d30d2eb": {
+   "Type": "AWS::EC2::Instance",
+   "Properties": {
+    "AvailabilityZone": {
+     "Fn::Select": [
+      0,
+      {
+       "Fn::GetAZs": ""
+      }
+     ]
+    },
+    "BlockDeviceMappings": [
+     {
+      "DeviceName": "/dev/xvda",
+      "Ebs": {
+       "DeleteOnTermination": true,
+       "Encrypted": true,
+       "VolumeSize": 30,
+       "VolumeType": "gp3"
+      }
+     }
+    ],
+    "IamInstanceProfile": {
+     "Ref": "IDEInstanceProfile629499A0"
+    },
+    "ImageId": {
+     "Ref": "SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61x8664C96584B6F00A464EAD1953AFF4B05118Parameter"
+    },
+    "InstanceType": "c6a.xlarge",
+    "NetworkInterfaces": [
+     {
+      "AssociatePublicIpAddress": true,
+      "DeviceIndex": "0",
+      "GroupSet": [
+       {
+        "Fn::GetAtt": [
+         "IDEIdeSecurityGroup8A8A4754",
+         "GroupId"
+        ]
+       }
+      ],
+      "SubnetId": {
+       "Ref": "IDEIdeVPCPublicSubnet1Subnet87DE07B9"
+      }
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "TeamStackAIAgents/IDE/IDE"
+     }
+    ],
+    "UserData": {
+     "Fn::Base64": "#!/bin/bash"
+    }
+   },
+   "DependsOn": [
+    "IDEIdeVPCIGW9707448B",
+    "IDEIdeVPCPublicSubnet1DefaultRouteF037C77C",
+    "IDEIdeVPCPublicSubnet1RouteTable295EAED3",
+    "IDEIdeVPCPublicSubnet1RouteTableAssociationD92F1482",
+    "IDEIdeVPCPublicSubnet1Subnet87DE07B9",
+    "IDEIdeVPC62913228",
+    "IDEIdeVPCVPCGW54E125D2",
+    "SharedRoleDefaultPolicyA7803C87",
+    "SharedRoleD1D02F7E",
+    "TerraformRunnerBuildCompleteRuleAllowEventRuleTeamStackAIAgentsTerraformRunnerReportBuildFunction4E4AFA6B3D993FAB",
+    "TerraformRunnerBuildCompleteRuleD8B3E8A0",
+    "TerraformRunnerClusterStackF4381B35",
+    "TerraformRunnerReportBuildFunction930A0056",
+    "TerraformRunnerReportBuildFunctionServiceRoleDefaultPolicyED9E498A",
+    "TerraformRunnerReportBuildFunctionServiceRole7F912F39",
+    "TerraformRunnerStackDeployProject98D6FDAC",
+    "TerraformRunnerStartBuildFunctionAD100DF4",
+    "TerraformRunnerStartBuildFunctionServiceRoleDefaultPolicy5B2919A8",
+    "TerraformRunnerStartBuildFunctionServiceRole8C106ADF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IDE/Resource"
+   }
+  },
+  "IDEIdeBootstrapFunctionServiceRoleC4E91F78": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeBootstrapFunction/ServiceRole/Resource"
+   }
+  },
+  "IDEIdeBootstrapFunctionServiceRoleDefaultPolicy5C136299": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "iam:PassRole",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "SharedRoleD1D02F7E",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "ec2:DescribeInstances",
+        "iam:ListInstanceProfiles",
+        "ssm:DescribeInstanceInformation",
+        "ssm:GetCommandInvocation",
+        "ssm:SendCommand"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "IDEIdeBootstrapFunctionServiceRoleDefaultPolicy5C136299",
+    "Roles": [
+     {
+      "Ref": "IDEIdeBootstrapFunctionServiceRoleC4E91F78"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeBootstrapFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "IDEIdeBootstrapFunction64776642": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "from __future__ import print_function\nimport boto3\nimport json\nimport os\nimport time\nimport traceback\nimport cfnresponse\nfrom botocore.exceptions import WaiterError\n\ndef lambda_handler(event, context):\n    print('Event: {}'.format(event))\n    print('context: {}'.format(context))\n    responseData = {}\n\n    status = cfnresponse.SUCCESS\n\n    if event['RequestType'] == 'Delete':\n        responseData = {'Success': 'Custom Resource removed'}\n        cfnresponse.send(event, context, status, responseData, 'CustomResourcePhysicalID')\n    else:\n        try:\n            # Open AWS clients\n            ec2 = boto3.client('ec2')\n            ssm = boto3.client('ssm')\n\n            instance_id = event['ResourceProperties']['InstanceId']\n\n            print('Waiting for the instance to be ready...')\n            # Wait for Instance to become ready\n            instance_state = 'unknown'\n            print('Instance is currently in state'.format(instance_state))\n            while instance_state != 'running':\n                time.sleep(5)\n                di = ec2.describe_instances(InstanceIds=[instance_id])\n                instance_state = di['Reservations'][0]['Instances'][0]['State']['Name']\n                print('Waiting for instance in state: {}'.format(instance_state))\n\n            print('Instance is ready')\n\n            print('Waiting for instance to come online in SSM...')\n            for i in range(1, 60):\n              response = ssm.describe_instance_information(Filters=[{'Key': 'InstanceIds', 'Values': [instance_id]}])\n              if len(response[\"InstanceInformationList\"]) == 0:\n                print('No instances in SSM')\n              elif len(response[\"InstanceInformationList\"]) > 0 and \\\n                    response[\"InstanceInformationList\"][0][\"PingStatus\"] == \"Online\" and \\\n                    response[\"InstanceInformationList\"][0][\"InstanceId\"] == instance_id:\n                print('Instance is online in SSM')\n                break\n              time.sleep(10)\n\n            ssm_document = event['ResourceProperties']['SsmDocument']\n\n            ssm.send_command(\n                InstanceIds=[instance_id],\n                DocumentName=ssm_document,\n                CloudWatchOutputConfig={\n                    'CloudWatchLogGroupName': event['ResourceProperties']['LogGroupName'],\n                    'CloudWatchOutputEnabled': True\n                })\n\n            responseData = {'Success': 'Started bootstrapping for instance: '+instance_id}\n        except Exception as e:\n            status = cfnresponse.FAILED\n            tb_err = traceback.format_exc()\n            print(tb_err)\n            responseData = {'Error': tb_err}\n        finally:\n            cfnresponse.send(event, context, status, responseData, 'CustomResourcePhysicalID')"
+    },
+    "Handler": "index.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "IDEIdeBootstrapFunctionServiceRoleC4E91F78",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.12",
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "IDEIdeBootstrapFunctionServiceRoleDefaultPolicy5C136299",
+    "IDEIdeBootstrapFunctionServiceRoleC4E91F78"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeBootstrapFunction/Resource"
+   }
+  },
+  "IDEIdeLogGroup2C309711": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "RetentionInDays": 7
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeLogGroup/Resource"
+   }
+  },
+  "IDEIdePasswordSecret13714D56": {
+   "Type": "AWS::SecretsManager::Secret",
+   "Properties": {
+    "GenerateSecretString": {
+     "ExcludeCharacters": "\"@/\\",
+     "ExcludePunctuation": true,
+     "GenerateStringKey": "password",
+     "IncludeSpace": false,
+     "PasswordLength": 32,
+     "SecretStringTemplate": "{\"password\":\"\"}"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePasswordSecret/Resource"
+   }
+  },
+  "IDEIdeDistribution8309EA2E": {
+   "Type": "AWS::CloudFront::Distribution",
+   "Properties": {
+    "DistributionConfig": {
+     "DefaultCacheBehavior": {
+      "AllowedMethods": [
+       "GET",
+       "HEAD",
+       "OPTIONS",
+       "PUT",
+       "PATCH",
+       "POST",
+       "DELETE"
+      ],
+      "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+      "Compress": true,
+      "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3",
+      "TargetOriginId": "TeamStackAIAgentsIDEIdeDistributionOrigin1C6AD4B60",
+      "ViewerProtocolPolicy": "allow-all"
+     },
+     "Enabled": true,
+     "HttpVersion": "http2",
+     "IPV6Enabled": true,
+     "Origins": [
+      {
+       "CustomOriginConfig": {
+        "HTTPPort": 80,
+        "OriginProtocolPolicy": "http-only",
+        "OriginSSLProtocols": [
+         "TLSv1.2"
+        ]
+       },
+       "DomainName": {
+        "Fn::GetAtt": [
+         "IDE40A28AC6641a0cee2d30d2eb",
+         "PublicDnsName"
+        ]
+       },
+       "Id": "TeamStackAIAgentsIDEIdeDistributionOrigin1C6AD4B60"
+      }
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeDistribution/Resource"
+   }
+  },
+  "IDEIdeBootstrapWaitConditionHandleEEDFD1E0": {
+   "Type": "AWS::CloudFormation::WaitConditionHandle",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeBootstrapWaitConditionHandle"
+   }
+  },
+  "IDEIdeBootstrapWaitCondition689B05CD": {
+   "Type": "AWS::CloudFormation::WaitCondition",
+   "Properties": {
+    "Count": 1,
+    "Handle": {
+     "Ref": "IDEIdeBootstrapWaitConditionHandleEEDFD1E0"
+    },
+    "Timeout": "900"
+   },
+   "DependsOn": [
+    "IDEInstanceProfile629499A0",
+    "IDE40A28AC6641a0cee2d30d2eb",
+    "IDEIdeBootstrapDocument92492883"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeBootstrapWaitCondition"
+   }
+  },
+  "IDEIdeBootstrapDocument92492883": {
+   "Type": "AWS::SSM::Document",
+   "Properties": {
+    "Content": {
+     "schemaVersion": "2.2",
+     "description": "Bootstrap IDE",
+     "parameters": {
+      "BootstrapScript": {
+       "type": "String",
+       "description": "(Optional) Custom bootstrap script to run.",
+       "default": ""
+      }
+     },
+     "mainSteps": [
+      {
+       "action": "aws:runShellScript",
+       "name": "IdeBootstrapFunction",
+       "inputs": {
+        "runCommand": [
+         {
+          "Fn::Sub": [
+           "bash << 'HEREDOC'\nset -e\n\necho \"Retrieving IDE password...\"\n\nPASSWORD_SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id \"${passwordName}\" --query 'SecretString' --output text)\n\nexport IDE_PASSWORD=$(echo \"$PASSWORD_SECRET_VALUE\" | jq -r '.password')\n\necho \"Setting profile variables...\"\n\n# Set some useful variables\nexport TOKEN=$(curl -X PUT \"http://169.254.169.254/latest/api/token\" -H \"X-aws-ec2-metadata-token-ttl-seconds: 21600\")\nexport AWS_REGION=$(curl -H \"X-aws-ec2-metadata-token: $TOKEN\" -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | awk -F\\\" '{print $4}')\nexport EC2_PRIVATE_IP=$(curl -H \"X-aws-ec2-metadata-token: $TOKEN\" -s http://169.254.169.254/latest/meta-data/local-ipv4)\n\ntee /etc/profile.d/workshop.sh <<EOF\nexport INSTANCE_IAM_ROLE_NAME=\"${instanceIamRoleName}\"\nexport INSTANCE_IAM_ROLE_ARN=\"${instanceIamRoleArn}\"\n\nexport AWS_REGION=\"$AWS_REGION\"\nexport EC2_PRIVATE_IP=\"$EC2_PRIVATE_IP\"\n\nexport IDE_DOMAIN=\"${domain}\"\nexport IDE_URL=\"https://${domain}\"\nexport IDE_PASSWORD=\"$IDE_PASSWORD\"\n\nalias code=\"code-server\"\nEOF\n\nsource /etc/profile.d/workshop.sh\n\necho \"Setting PS1...\"\n\n# Set PS1\ntee /etc/profile.d/custom_prompt.sh <<EOF\n#!/bin/sh\n\nexport PROMPT_COMMAND='export PS1=\"\\u:\\w:$ \"'\nEOF\n\necho \"Generating SSH key...\"\n\n# Generate an SSH key for ec2-user\nsudo -u ec2-user bash -c \"ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa -m pem <<< y\"\n\necho \"Installing AWS CLI...\"\n\n# Install AWS CLI\ncurl -LSsf -o /tmp/aws-cli.zip https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip\nunzip -q -d /tmp /tmp/aws-cli.zip\n/tmp/aws/install --update\nrm -rf /tmp/aws\n\necho \"Installing Docker...\"\n\n# Install docker and base package\ndnf install -y -q docker git\nsystemctl enable --now docker\nusermod -aG docker ec2-user\n\necho \"Installing code-server...\"\n\n# Install code-server\ncodeServer=$(dnf list installed code-server | wc -l)\nif [ \"$codeServer\" -eq \"0\" ]; then\n  sudo -u ec2-user \"codeServerVersion=${codeServerVersion}\" bash -c 'curl -fsSL https://code-server.dev/install.sh | sh -s -- --version ${codeServerVersion}'\n  systemctl enable --now code-server@ec2-user\nfi\n\nsudo -u ec2-user bash -c 'mkdir -p ~/.config/code-server'\nsudo -u ec2-user bash -c 'touch ~/.config/code-server/config.yaml'\ntee /home/ec2-user/.config/code-server/config.yaml <<EOF\ncert: false\nauth: password\npassword: \"$IDE_PASSWORD\"\nbind-addr: 127.0.0.1:8889\nEOF\n\n# Create default directory for workspace\nsudo -u ec2-user bash -c 'mkdir -p ~/environment'\n\nENVIRONMENT_CONTENTS_ZIP=${environmentContentsZip}\n\nif [ ! -z \"$ENVIRONMENT_CONTENTS_ZIP\" ]; then\n  echo \"Adding environments archive...\"\n\n  if [[ $ENVIRONMENT_CONTENTS_ZIP == s3:* ]]; then\n    aws s3 cp $ENVIRONMENT_CONTENTS_ZIP /tmp/environment.zip\n  else\n    curl -LSsf -o /tmp/environment.zip $ENVIRONMENT_CONTENTS_ZIP\n  fi\n\n  sudo -u ec2-user bash -c 'unzip -q /tmp/environment.zip -d ~/environment'\n\n  rm -rf /tmp/environment.zip\nfi\n\nSTARTUP_EDITOR='none'\n\nTERMINAL_ON_STARTUP=\"${terminalOnStartup}\"\nREADME_URL=\"${readmeUrl}\"\n\nif [ ! -z \"$README_URL\" ]; then\n  echo \"Adding README...\"\n  if [[ $README_URL == s3:* ]]; then\n    aws s3 cp $README_URL /home/ec2-user/environment/README.md\n  else\n    curl -LSsf -o /home/ec2-user/environment/README.md $README_URL\n  fi\nfi\n\nif [ \"$TERMINAL_ON_STARTUP\" = \"true\" ]; then\n  STARTUP_EDITOR='terminal'\nelif [ -f /home/ec2-user/environment/README.md ]; then\n  STARTUP_EDITOR='readme'\nfi\n\necho \"Configuring code-server...\"\n\nsudo -u ec2-user bash -c 'mkdir -p ~/.local/share/code-server/User'\nsudo -u ec2-user bash -c 'touch ~/.local/share/code-server/User/settings.json'\ntee /home/ec2-user/.local/share/code-server/User/settings.json <<EOF\n{\n  \"extensions.autoUpdate\": false,\n  \"extensions.autoCheckUpdates\": false,\n  \"security.workspace.trust.enabled\": false,\n  \"workbench.startupEditor\": \"$STARTUP_EDITOR\",\n  \"task.allowAutomaticTasks\": \"on\",\n  \"telemetry.telemetryLevel\": \"off\",\n  \"update.mode\": \"none\"\n}\nEOF\n\nsudo -u ec2-user bash -c 'touch ~/.local/share/code-server/User/keybindings.json'\ntee /home/ec2-user/.local/share/code-server/User/keybindings.json << 'EOF'\n[\n  {\n    \"key\": \"shift+cmd+/\",\n    \"command\": \"remote.tunnel.forwardCommandPalette\"\n  }\n]\nEOF\n\nif [ ! -z \"${splashUrl}\" ]; then\necho \"Configuring splash URL...\"\n\nsudo -u ec2-user bash -c 'touch ~/.local/share/code-server/User/tasks.json'\ntee /home/ec2-user/.local/share/code-server/User/tasks.json << 'EOF'\n{\n  \"version\": \"2.0.0\",\n  \"tasks\": [\n    {\n      \"label\": \"Open Splash\",\n      \"command\": \"${!input:openSimpleBrowser}\",\n      \"presentation\": {\n        \"reveal\": \"always\",\n        \"panel\": \"new\"\n      },\n      \"runOptions\": {\n        \"runOn\": \"folderOpen\"\n      }\n    }\n  ],\n  \"inputs\": [\n    {\n      \"id\": \"openSimpleBrowser\",\n      \"type\": \"command\",\n      \"command\": \"simpleBrowser.show\",\n      \"args\": [\n        \"${splashUrl}\"\n      ]\n    }\n  ]\n}\nEOF\nfi\n\necho \"Installing code-server extensions...\"\n\nEXTENSIONS=\"${extensions}\"\n\nIFS=',' read -ra array <<< \"$EXTENSIONS\"\n\n# Iterate over each entry in the array\nfor extension in \"${!array[@]}\"; do\n  # Use retries as extension installation seems unreliable\n  sudo -u ec2-user bash -c \"set -e; (r=5;while ! code-server --install-extension $extension --force ; do ((--r))||exit;sleep 5;done)\"\ndone\n\nif [ ! -f \"/home/ec2-user/.local/share/code-server/coder.json\" ]; then\n  sudo -u ec2-user bash -c 'touch ~/.local/share/code-server/coder.json'\n  echo '{ \"query\": { \"folder\": \"/home/ec2-user/environment\" } }' > /home/ec2-user/.local/share/code-server/coder.json\nfi\n\necho \"Restarting code-server...\"\n\nsystemctl restart code-server@ec2-user\n\necho \"Installing Caddy...\"\n\n# Install caddy\ndnf copr enable -y -q @caddy/caddy epel-9-x86_64\ndnf install -y -q caddy\nsystemctl enable --now caddy\n\ntee /etc/caddy/Caddyfile <<EOF\nhttp://${domain} {\n  handle /* {\n    reverse_proxy 127.0.0.1:8889\n  }\n  #GITEA\n}\nEOF\n\necho \"Restarting caddy...\"\n\nsystemctl restart caddy\n\nif [ ! -f \"/home/ec2-user/.local/share/code-server/coder.json\" ]; then\n  sudo -u ec2-user bash -c 'touch ~/.local/share/code-server/coder.json'\n  echo '{ \"query\": { \"folder\": \"/home/ec2-user/environment\" } }' > /home/ec2-user/.local/share/code-server/coder.json\nfi\n\n${installGitea}\n\necho \"Running custom bootstrap script...\"\n\n${customBootstrapScript}\nHEREDOC\n\nexit_code=$?\n\n/opt/aws/bin/cfn-signal -e $exit_code '${waitConditionHandleUrl}'\n\nexit $exit_code",
+           {
+            "instanceIamRoleName": {
+             "Ref": "SharedRoleD1D02F7E"
+            },
+            "instanceIamRoleArn": {
+             "Fn::GetAtt": [
+              "SharedRoleD1D02F7E",
+              "Arn"
+             ]
+            },
+            "passwordName": {
+             "Fn::Join": [
+              "-",
+              [
+               {
+                "Fn::Select": [
+                 0,
+                 {
+                  "Fn::Split": [
+                   "-",
+                   {
+                    "Fn::Select": [
+                     6,
+                     {
+                      "Fn::Split": [
+                       ":",
+                       {
+                        "Ref": "IDEIdePasswordSecret13714D56"
+                       }
+                      ]
+                     }
+                    ]
+                   }
+                  ]
+                 }
+                ]
+               },
+               {
+                "Fn::Select": [
+                 1,
+                 {
+                  "Fn::Split": [
+                   "-",
+                   {
+                    "Fn::Select": [
+                     6,
+                     {
+                      "Fn::Split": [
+                       ":",
+                       {
+                        "Ref": "IDEIdePasswordSecret13714D56"
+                       }
+                      ]
+                     }
+                    ]
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             ]
+            },
+            "domain": {
+             "Fn::GetAtt": [
+              "IDEIdeDistribution8309EA2E",
+              "DomainName"
+             ]
+            },
+            "codeServerVersion": "4.102.1",
+            "waitConditionHandleUrl": {
+             "Ref": "IDEIdeBootstrapWaitConditionHandleEEDFD1E0"
+            },
+            "customBootstrapScript": {
+             "Fn::Sub": [
+              "#!/bin/bash\nset -x\nsudo sh -c \"echo LANG=en_US.utf-8 >> /etc/environment\"\nsudo sh -c \"echo LC_ALL=en_US.UTF-8 >> /etc/environment\"\n# . /home/ec2-user/.bashrc\nsudo yum -y install sqlite telnet jq strace tree gcc glibc-static python3 python3-pip gettext bash-completion npm zsh util-linux-user locate\necho '=== INSTALL and CONFIGURE default software components ==='\n\naws configure set cli_pager \"\"\n\nexport TOKEN=$(curl -X PUT \"http://169.254.169.254/latest/api/token\" -H \"X-aws-ec2-metadata-token-ttl-seconds: 21600\")\nexport AWS_REGION=$(curl -H \"X-aws-ec2-metadata-token: $TOKEN\" -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | awk -F\\\" '{print $4}')\nexport ACCOUNTID=$(aws sts get-caller-identity | jq -r .Account)\nexport AWS_ACCOUNT_ID=$ACCOUNTID\nexport ACCOUNT_ID=$ACCOUNTID\nexport TERRAFORM_STATE_S3_BUCKET=${TerraformStateS3Bucket} # Coming from Fn.Sub\nexport TERRAFORM_ZIP=${TerraformZip} # Coming from Fn.Sub\nexport CLUSTER_NAME=${ClusterName} # Coming from Fn.Sub\nexport TERRAFORM_DIRECTORY=infrastructure/terraform/\nexport BASE_DIR=/home/ec2-user/environment\nexport GOROOT=/usr/local/go\n\n\n#Install workshop\nmkdir -p $BASE_DIR/$TERRAFORM_DIRECTORY\n\n# Install terraform\nsudo curl -Lqs -o /tmp/terraform_installer.zip https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_linux_amd64.zip\nsudo unzip /tmp/terraform_installer.zip -d /usr/bin/\nsudo chmod +x /usr/bin/terraform\n\n\n\nif [[ $TERRAFORM_ZIP == s3:* ]]; then\n  aws s3 cp $TERRAFORM_ZIP /tmp/terraform.zip\nelse\n  curl -Lqs -o /tmp/terraform.zip $TERRAFORM_ZIP\nfi\n\nsudo unzip /tmp/terraform.zip -d /tmp/githubrepo\n\ncp -a /tmp/githubrepo/sample-agentic-frameworks-on-aws-main/eks/. $BASE_DIR\nrm $BASE_DIR/CONTRIBUTING.md\n\n\nsudo cat << EOF > $BASE_DIR/$TERRAFORM_DIRECTORY/backend_override.tf\nterraform {\n  backend \"s3\" {\n    bucket         = \"$TERRAFORM_STATE_S3_BUCKET\"\n    key            = \"terraform.tfstate\"\n    region         = \"$AWS_REGION\"\n  }\n}\nEOF\n\n\n\n\nsudo chown -R ec2-user:ec2-user /home/ec2-user/\n\n# Running terraform again because we now we have the IDE_URL to populate in Cognito callback\nexport TF_VAR_name=$CLUSTER_NAME\nexport TF_VAR_cognito_additional_redirect_uri=$IDE_URL/proxy/8000/callback\nexport TF_VAR_cognito_additional_logout_uri=$IDE_URL/proxy/8000/\n/usr/bin/terraform -chdir=$BASE_DIR/$TERRAFORM_DIRECTORY init\n/usr/bin/terraform -chdir=$BASE_DIR/$TERRAFORM_DIRECTORY apply -auto-approve\n\n# Building and Pushing containers to speed up this step for workshop\nexport DEBUG=1\nsudo -u ec2-user $BASE_DIR/scripts/containers.sh\n\n\n# Just in case new files are created\nsudo chown -R ec2-user:ec2-user /home/ec2-user/\n\n\nsudo bash -c \"cat > /usr/local/bin/wait-for-lb\" <<'EOT'\n#!/bin/bash\nset -e\nexport host=$1\n\nif [ -z \"$host\" ]; then\necho \"the service is not found: $host\"\nexit\nfi\n\necho $host\n\nset -Eeuo pipefail\n\necho \"Waiting for $host...\"\n\nEXIT_CODE=0\n\ntimeout -s TERM 600 bash -c \\\n'while [[ \"$(curl -s -o /dev/null -L -w ''%{http_code}'' http://$host/home)\" != \"200\" ]];\\\ndo sleep 5;\\\ndone' || EXIT_CODE=$?\n\nif [ $EXIT_CODE -ne 0 ]; then\necho \"Load balancer did not become available or return HTTP 200 for 600 seconds\"\nexit 1\nfi\n\necho \"You can now access http://$host\"\nEOT\nsudo chmod 755 /usr/local/bin/wait-for-lb\n\n\nsudo curl --silent --location -o /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl\nsudo chmod +x /usr/bin/kubectl\n\nsudo curl --silent --location -o /usr/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.12.2/argocd-linux-amd64\nsudo chmod +x /usr/bin/argocd\n\ncurl --silent --location \"https://get.helm.sh/helm-v3.18.3-linux-amd64.tar.gz\" | tar xz -C /tmp\nsudo mv -f /tmp/linux-amd64/helm /usr/bin\nsudo chmod +x /usr/bin/helm\n\nsudo curl --silent --location \"https://go.dev/dl/go1.23.1.linux-amd64.tar.gz\" | sudo tar xz -C /usr/local\n\n# Install GitHub CLI\ncurl -L https://github.com/cli/cli/releases/download/v2.45.0/gh_2.45.0_linux_amd64.tar.gz -o /tmp/gh.tar.gz\ntar -xzf /tmp/gh.tar.gz -C /tmp\nsudo mv /tmp/gh_2.45.0_linux_amd64/bin/gh /usr/local/bin/\nsudo chmod +x /usr/local/bin/gh\n\n# Install uv\nsudo pip install uv\n\n\nsudo su - ec2-user <<EOF\nset -x\nexport | sort\n\n#Install zsh\nsudo -k chsh -s /bin/zsh ec2-user\n# TODO check if we want zsh as default in vscode\n#jq '. + {\"terminal.integrated.defaultProfile.linux\": \"zsh\"}' /home/ec2-user/.local/share/code-server/User/settings.json > temp.json && mv temp.json /home/ec2-user/.local/share/code-server/User/settings.json\nrm -rf ~/.oh-my-zsh\n\nwget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh\nCHSH=no RUNZSH=no sh install.sh\n\ngit clone https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k\ngit clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting\ngit clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions\ngit clone https://github.com/zsh-users/zsh-history-substring-search ~/.oh-my-zsh/custom/plugins/zsh-history-substring-search\n\nkubectl completion zsh > \"~/.oh-my-zsh/plugins/git/_kubectl\"\nargocd completion zsh > \"~/.oh-my-zsh/plugins/git/_argocd\"\nhelm completion zsh > \"~/.oh-my-zsh/plugins/git/_helm\"\n\n# Copy the workshop files to environment\n# TODO: make this file available in github\n#cp -a ~/environment/terraform/home/. ~/\n\n\naws configure set cli_pager \"\"\n\n# start of cloud9-init script\nkubectl completion bash >>  ~/.bash_completion\nargocd completion bash >>  ~/.bash_completion\nhelm completion bash >>  ~/.bash_completion\n\ncurl -sS https://webinstall.dev/k9s | bash\n\n#Install Krew and stern\n(\n  cd \\$(mktemp -d) && pwd &&\n  OS=\\$(uname | tr '[:upper:]' '[:lower:]') &&\n  ARCH=\\$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\\(arm\\)\\(64\\)\\?.*/\\1\\2/' -e 's/aarch64$/arm64/') &&\n  KREW=krew-\\${!OS}_\\${!ARCH} && echo \\$KREW\n  curl -fsSLO https://github.com/kubernetes-sigs/krew/releases/latest/download/\\${!KREW}.tar.gz &&\n  tar zxvf \\${!KREW}.tar.gz &&\n  ./\\${!KREW} install krew\n)\necho \"export PATH=${!KREW_ROOT:-/home/ec2-user/.krew}/bin:/home/ec2-user/.local/bin:/usr/local/go/bin:~/go/bin:$PATH\" | tee -a ~/.bashrc\nexport PATH=${!KREW_ROOT:-/home/ec2-user/.krew}/bin:/home/ec2-user/.local/bin:/usr/local/go/bin:~/go/bin:$PATH\nkubectl krew install stern\nkubectl krew install np-viewer\n\ngo install github.com/kyverno/chainsaw@latest\npip install pytest\npip install pytest_bdd boto3 kubernetes\n\ncurl -sfL https://direnv.net/install.sh | bash\n\n#Install ag silver search\n## Install build dependencies\nsudo dnf install -y git gcc make pkg-config automake autoconf pcre-devel xz-devel zlib-devel\n## Clone the repository, build and install from source\ncd /tmp && git clone https://github.com/ggreer/the_silver_searcher.git && \\\ncd the_silver_searcher && \\\n./build.sh && \\\nsudo make install\n\n#Install fuzzy search\ngit clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf\n~/.fzf/install --all\n\n\n#Install Amazon Q\ncurl --proto '=https' --tlsv1.2 -sSf \"https://desktop-release.q.us-east-1.amazonaws.com/latest/q-x86_64-linux.zip\" -o \"/tmp/q.zip\"\nunzip /tmp/q.zip -d /tmp\n#/tmp/q/install.sh --no-confirm\n\n#Install Node 20\n# This is need it to run mcp inspector\nsudo dnf install -y nodejs20\nsudo alternatives --install /usr/bin/node node /usr/bin/node-20 20\nsudo alternatives --set node /usr/bin/node-20\nsudo alternatives --install /usr/bin/npm npm /usr/bin/npm-20 20\nsudo alternatives --set npm /usr/bin/npm-20\nsudo alternatives --install /usr/bin/npx npx /usr/bin/npx-20 20\nsudo alternatives --set npx /usr/bin/npx-20\n\n\nEOF\n\n#install kubectx & kubens\nsudo rm -rf /opt/kubectx\nsudo git clone https://github.com/ahmetb/kubectx /opt/kubectx\nsudo ln -sf /opt/kubectx/kubectx /usr/local/bin/kubectx\nsudo ln -sf /opt/kubectx/kubens /usr/local/bin/kubens\n\n\nsudo curl -L https://github.com/awslabs/eks-node-viewer/releases/download/v0.7.1/eks-node-viewer_Linux_x86_64 -o /usr/local/bin/eks-node-viewer  && sudo chmod +x $_\n\nsource ~/.bashrc\n\n# end of cloud9-init script\n\necho '=== Configure .bashrc.d ==='\nsudo -H -u ec2-user bash -c \"mkdir -p ~/.bashrc.d\"\nsudo -H -u ec2-user bash -c \"cat << 'EOT' >> /home/ec2-user/.bashrc.d/env.bash\n\nexport ACCOUNTID=$ACCOUNTID\nexport ACCOUNT_ID=$ACCOUNTID\nexport AWS_ACCOUNT_ID=$ACCOUNTID\nexport AWS_REGION=$AWS_REGION\nexport AWS_DEFAULT_REGION=$AWS_REGION\nexport ECR_REPO=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com\nexport CDK_DEFAULT_REGION=$AWS_REGION\nexport CDK_DEFAULT_ACCOUNT=$AWS_ACCOUNT_ID\n\nexport CLUSTER_NAME=$CLUSTER_NAME\n\nexport TF_VAR_name=$CLUSTER_NAME\nexport TF_VAR_cognito_additional_redirect_uri=\\$IDE_URL/proxy/8000/callback\nexport TF_VAR_cognito_additional_logout_uri=\\$IDE_URL/proxy/8000/\n\n# Set the environment variables for the workshop\n. \\$HOME/environment/scripts/env.sh\n\nexport GOPATH=~/go\nexport GOROOT=/usr/local/go\nPATH=\\$PATH:\\$HOME/.local/bin\nPATH=~/bin:~/.pyenv/shims:\\$PATH:/usr/local/sbin:\\$GOPATH/bin:\\$GOROOT/bin\nPATH=\\$PATH:/usr/local/kubebuilder/bin\nPATH=\\$HOME/.krew/bin:\\$PATH:~/.fzf/bin/\nPATH=\\$PATH:/usr/local/aws-codeguru-cli/bin\nPATH=\\$HOME/.krew/bin:\\$PATH\nexport PATH=/usr/local/go/bin:\\$HOME/go/bin:\\$PATH\n\nalias code=/usr/lib/code-server/bin/code-server\nalias k=kubectl\nalias kgn='kubectl get nodes -L beta.kubernetes.io/arch -L eks.amazonaws.com/capacityType -L beta.kubernetes.io/instance-type -L eks.amazonaws.com/nodegroup -L topology.kubernetes.io/zone -L karpenter.sh/provisioner-name -L karpenter.sh/capacity-type'\nalias ll='ls -la'\nalias ktx=kubectx\nalias kctx=kubectx\nalias kns=kubens\nalias python=python3\nalias pip=pip3\nalias tfi='terraform init'\nalias tfp='terraform plan'\nalias tfy='terraform apply --auto-approve'\nalias eks-node-viewer='eks-node-viewer -extra-labels=karpenter.sh/nodepool,beta.kubernetes.io/arch,topology.kubernetes.io/zone'\nalias dfimage='docker run -v /var/run/docker.sock:/var/run/docker.sock --rm ghcr.io/laniksj/dfimage'\nalias k=kubectl\nalias kl='kubectl logs deploy/karpenter -n karpenter -f --tail=20'\nalias emacs=emacs-nox\nalias kns=kubens\nalias kctx=kubectx\n\naws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME\n\nunset PROMPT_COMMAND\nexport PS1='\\w:\\$ '\n\nEOT\n\"\nsudo -H -u ec2-user bash -c \"mkdir -p /home/ec2-user/environment/.vscode\"\nsudo -H -u ec2-user bash -c \"cat << 'EOT' >> /home/ec2-user/environment/.vscode/settings.json\n{\n  \\\"remote.otherPortsAttributes\\\": {\n    \\\"onAutoForward\\\": \\\"silent\\\"\n  }\n}\n\nEOT\n\"\n\n\n# # change permissions for /root/.ssh for the codecommit TF step to be able to change the file location from /root to /home/ec2-user\n# chown -R ec2-user:ec2-user /root/.ssh\n# chown -R ec2-user:ec2-user /root\n# chmod 700 /root/.ssh\n# chmod 700 /root\n\necho '=== CONFIGURE awscli and setting ENVIRONMENT VARS ==='\necho \"complete -C '/usr/local/bin/aws_completer' aws\" >> /home/ec2-user/.bashrc.d/aws.bash\necho '=== Run init script ==='\n# aws s3 cp s3://bucket-name/prefix/cloud9-init.sh /tmp && bash /tmp/cloud9-init.sh\necho '=== CLEANING /home/ec2-user ==='\n# for f in cloud9; do rm -rf /home/ec2-user/$f; done # cloud9 doesn't exists\nchown -R ec2-user:ec2-user /home/ec2-user/\n#Don't reboot in ssm document, that break the execution\necho \"Bootstrap completed with return code $?\"\n",
+              {
+               "TerraformStateS3Bucket": {
+                "Ref": "TerraformRunnerTerraformStateBucket72F4F64A"
+               },
+               "TerraformZip": "https://github.com/aws-samples/sample-agentic-frameworks-on-aws/archive/refs/heads/main.zip",
+               "ClusterName": "agentic-ai-on-eks-workshop"
+              }
+             ]
+            },
+            "installGitea": "",
+            "splashUrl": "",
+            "readmeUrl": "",
+            "environmentContentsZip": "",
+            "extensions": "hashicorp.terraform,ms-azuretools.vscode-containers,ms-kubernetes-tools.vscode-kubernetes-tools,redhat.vscode-yaml,ms-python.python",
+            "terminalOnStartup": "true"
+           }
+          ]
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "DocumentFormat": "YAML",
+    "DocumentType": "Command",
+    "UpdateMethod": "NewVersion"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeBootstrapDocument"
+   }
+  },
+  "IDEIdeBootstrapResource4FAB505D": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "IDEIdeBootstrapFunction64776642",
+      "Arn"
+     ]
+    },
+    "InstanceId": {
+     "Ref": "IDE40A28AC6641a0cee2d30d2eb"
+    },
+    "SsmDocument": {
+     "Ref": "IDEIdeBootstrapDocument92492883"
+    },
+    "LogGroupName": {
+     "Ref": "IDEIdeLogGroup2C309711"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdeBootstrapResource/Default"
+   }
+  },
+  "IDEIdePasswordExporterFunctionServiceRole1AB8C666": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePasswordExporterFunction/ServiceRole/Resource"
+   }
+  },
+  "IDEIdePasswordExporterFunctionServiceRoleDefaultPolicyA84D214D": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "IDEIdePasswordSecret13714D56"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "IDEIdePasswordExporterFunctionServiceRoleDefaultPolicyA84D214D",
+    "Roles": [
+     {
+      "Ref": "IDEIdePasswordExporterFunctionServiceRole1AB8C666"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePasswordExporterFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "IDEIdePasswordExporterFunction260CA9C5": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "import traceback\nimport cfnresponse\nimport boto3\nimport json\n\ndef lambda_handler(event, context):\n    print('Event: {}'.format(event))\n    print('context: {}'.format(context))\n    responseData = {}\n\n    status = cfnresponse.SUCCESS\n\n    if event['RequestType'] == 'Delete':\n        cfnresponse.send(event, context, status, responseData, 'CustomResourcePhysicalID')\n    else:\n        try:\n            passwordName = event['ResourceProperties']['PasswordName']\n\n            secretsmanager = boto3.client('secretsmanager')\n\n            response = secretsmanager.get_secret_value(\n                SecretId=passwordName,\n            )\n            \n            responseData = json.loads(response['SecretString'])\n        except Exception as e:\n            status = cfnresponse.FAILED\n            tb_err = traceback.format_exc()\n            print(tb_err)\n            responseData = {'Error': tb_err}\n        finally:\n            cfnresponse.send(event, context, status, responseData, 'CustomResourcePhysicalID')"
+    },
+    "Handler": "index.lambda_handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "IDEIdePasswordExporterFunctionServiceRole1AB8C666",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.12",
+    "Timeout": 180
+   },
+   "DependsOn": [
+    "IDEIdePasswordExporterFunctionServiceRoleDefaultPolicyA84D214D",
+    "IDEIdePasswordExporterFunctionServiceRole1AB8C666"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePasswordExporterFunction/Resource"
+   }
+  },
+  "IDEIdePasswordExporterD8D47805": {
+   "Type": "AWS::CloudFormation::CustomResource",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "IDEIdePasswordExporterFunction260CA9C5",
+      "Arn"
+     ]
+    },
+    "PasswordName": {
+     "Fn::Join": [
+      "-",
+      [
+       {
+        "Fn::Select": [
+         0,
+         {
+          "Fn::Split": [
+           "-",
+           {
+            "Fn::Select": [
+             6,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Ref": "IDEIdePasswordSecret13714D56"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "-",
+           {
+            "Fn::Select": [
+             6,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Ref": "IDEIdePasswordSecret13714D56"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/IDE/IdePasswordExporter/Default"
+   }
+  },
+  "ParticipantAccessEntry5E91C387": {
+   "Type": "AWS::EKS::AccessEntry",
+   "Properties": {
+    "AccessPolicies": [
+     {
+      "AccessScope": {
+       "Type": "cluster"
+      },
+      "PolicyArn": {
+       "Fn::Join": [
+        "",
+        [
+         "arn:",
+         {
+          "Ref": "AWS::Partition"
+         },
+         ":eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+        ]
+       ]
+      }
+     }
+    ],
+    "ClusterName": "agentic-ai-on-eks-workshop",
+    "PrincipalArn": {
+     "Ref": "ParticipantRoleArn"
+    }
+   },
+   "DependsOn": [
+    "TerraformRunnerBuildCompleteRuleAllowEventRuleTeamStackAIAgentsTerraformRunnerReportBuildFunction4E4AFA6B3D993FAB",
+    "TerraformRunnerBuildCompleteRuleD8B3E8A0",
+    "TerraformRunnerClusterStackF4381B35",
+    "TerraformRunnerReportBuildFunction930A0056",
+    "TerraformRunnerReportBuildFunctionServiceRoleDefaultPolicyED9E498A",
+    "TerraformRunnerReportBuildFunctionServiceRole7F912F39",
+    "TerraformRunnerStackDeployProject98D6FDAC",
+    "TerraformRunnerStartBuildFunctionAD100DF4",
+    "TerraformRunnerStartBuildFunctionServiceRoleDefaultPolicy5B2919A8",
+    "TerraformRunnerStartBuildFunctionServiceRole8C106ADF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TeamStackAIAgents/ParticipantAccessEntry/Resource"
+   }
+  }
+ },
+ "Parameters": {
+  "SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61x8664C96584B6F00A464EAD1953AFF4B05118Parameter": {
+   "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+   "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64"
+  },
+  "ParticipantRoleArn": {
+   "Type": "String"
+  }
+ },
+ "Outputs": {
+  "IdeUrl": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Fn::GetAtt": [
+        "IDEIdeDistribution8309EA2E",
+        "DomainName"
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  "IdePassword": {
+   "Value": {
+    "Fn::GetAtt": [
+     "IDEIdePasswordExporterD8D47805",
+     "password"
+    ]
+   }
+  }
+ }
+}
